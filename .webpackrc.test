@@ -1,0 +1,83 @@
+var path = require('path');
+var webpack = require('webpack');
+var development = process.env.NODE_ENV === 'development';
+function d(dir) { return path.resolve(__dirname, dir); }
+
+module.exports = {
+
+	entry: {
+		tests: development? [
+			'webpack-dev-server/client?http://localhost:8081/',
+			d('test/tests.html'),
+			d('test/index.js'),
+		] : [
+			d('test/index.js'),
+		],
+	},
+
+	debug: development,
+
+	devtool: development
+		? 'cheap-module-source-map'
+		: 'module-source-map',
+
+	resolve: {
+		extensions: [ '', '.js', '.jsx' ],
+		modulesDirectories: [ 'node_modules', 'src' ],
+	},
+
+	module: {
+		loaders: [{
+			test: /\.(html|css|jpg|png|svg|pdf)$/,
+			include: d('src/assets'),
+			loaders: ['file?context=./src/assets&name=[path][name].[ext]?[hash:10]'],
+		}, {
+			test: /\.(html)$/,
+			include: d('test'),
+			loaders: ['file?context=./test&name=[path][name].[ext]'],
+		}, {
+			test: /\.jsx?$/,
+			include: d('src'),
+			loaders: ['babel'],
+		}, {
+			test: /\.jsx?$/,
+			include: d('test'),
+			loaders: development? ['mocha', 'babel'] : ['babel'],
+		}]
+	},
+
+	node: {
+		fs: 'empty',
+	},
+
+	devServer: {
+		host: 'localhost',
+		port: 8081,
+		noInfo: true,
+		contentBase: d('dist'),
+		publicPath: 'http://localhost:8081/',
+		stats: { chunks: false },
+		proxy: [{
+			path: '/',
+			rewrite: function(r) { r.url = '/tests.html' },
+			target: 'http://localhost:8081/',
+		}],
+	},
+
+	output: {
+		path: d('dist'),
+		pathinfo: development,
+		target: development? 'browser' : 'node',
+		filename: '[name].js',
+		publicPath: development
+			? 'http://localhost:8081/'
+			: '/',
+	},
+
+	plugins: [
+		new webpack.NoErrorsPlugin(),
+		new webpack.optimize.OccurenceOrderPlugin(),
+		new webpack.optimize.DedupePlugin(),
+	],
+
+};

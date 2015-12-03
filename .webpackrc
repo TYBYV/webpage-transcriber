@@ -1,0 +1,77 @@
+var path = require('path');
+var webpack = require('webpack');
+var development = process.env.NODE_ENV === 'development';
+function d(dir) { return path.resolve(__dirname, dir); }
+
+module.exports = {
+
+	entry: {
+		scripts: development? [
+			'webpack-dev-server/client?http://localhost:8080/',
+			d('src/index.js'),
+		] : [
+			d('src/index.js'),
+		],
+	},
+
+	debug: development,
+
+	devtool: development
+		? 'cheap-module-source-map'
+		: 'module-source-map',
+
+	eslint: {
+		configFile: d('.eslintrc'),
+		failOnError: true,
+		failOnWarning: false,
+	},
+
+	resolve: {
+		extensions: [ '', '.js', '.jsx' ],
+		modulesDirectories: [ 'node_modules', 'src' ],
+	},
+
+	module: {
+		preLoaders : [{
+			test: /\.jsx?$/,
+			include: d('src'),
+			loaders: ['eslint'],
+		}],
+		loaders: [{
+			test: /\.(html|css|jpg|png|svg|pdf)$/,
+			include: d('src/assets'),
+			loaders: ['file?context=./src/assets&name=[path][name].[ext]?[hash:10]'],
+		}, {
+			test: /\.jsx?$/,
+			include: [d('src'), d('test')],
+			loaders: ['source-map', 'babel'],
+		}]
+	},
+
+	node: {
+		fs: 'empty',
+	},
+
+	devServer: {
+		noInfo: true,
+		contentBase: d('dist'),
+		publicPath: 'http://localhost:8080/',
+		stats: { chunks: false },
+	},
+
+	output: {
+		path: d('dist'),
+		pathinfo: development,
+		filename: '[name].js',
+		publicPath: development
+			? 'http://localhost:8080/'
+			: '/',
+	},
+
+	plugins: [
+		new webpack.NoErrorsPlugin(),
+		new webpack.optimize.OccurenceOrderPlugin(),
+		new webpack.optimize.DedupePlugin(),
+	],
+
+};
